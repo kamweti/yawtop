@@ -354,11 +354,11 @@ class UclaneOptions {
 	function setting_homepage_layout($fieldid) {  ?>
 		<label class="description">
 			<input name="uclane-options[<?php echo $fieldid; ?>]" type="radio" <?php checked( 'grid', $this->options[$fieldid] ); ?> value="grid" />
-			<span><?php _e( 'Grid Layout', 'esplanade' ); ?></span>
+			<span><?php _e( 'Grid Layout', 'uclane' ); ?></span>
 		</label><br />
 		<label class="description">
 			<input name="uclane-options[<?php echo $fieldid; ?>]" type="radio" <?php checked( 'blog', $this->options[$fieldid] ); ?> value="blog" />
-			<span><?php _e( 'Blog Layout', 'esplanade' ); ?></span>
+			<span><?php _e( 'Blog Layout', 'uclane' ); ?></span>
 		</label>
 	<?php
 	}
