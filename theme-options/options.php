@@ -19,21 +19,21 @@ class UclaneOptions {
 		/* Filters
 		*
 		*
-		* @template add_filter( '' , array(&$this, '') );
+		* @template add_filter( '' , array(&$this, 'fn') );
 		*/
-		//add_filter( '' , array(&$this, '') );
 
 
 		/* Actions
 		*
 		*
 		*
-		* @template add_action( '' , array(&$this, '') );
+		* @template add_action( '' , array(&$this, 'fn') );
 		*/
 		add_action( 'admin_init' , array(&$this, 'firstrun') );
 		add_action( 'admin_menu', array( &$this, 'add_admin_options' ) );
 		add_action( 'admin_init', array( &$this, 'register_admin_settings' ) );
 		add_action( 'admin_init', array( &$this, 'register_admin_options_sections' ) );
+		add_action( 'switch_theme', array( &$this, 'deactivate') );
 
 	}
 
@@ -47,7 +47,7 @@ class UclaneOptions {
 	 * activated and user hasn't arrived at options page
 	 */
 	function update_options() {	
-		return update_option('uclane_theme_options' , $this->options );
+		return update_option('uclane-options' , $this->options );
 	}
 
 	/* First run
@@ -57,6 +57,7 @@ class UclaneOptions {
 	 * 	to make sure this runs only once.
 	 */
 	function firstrun() {
+
  		if(!isset($this->options['theme-activated']) || ! $this->options['theme-activated'] ){
  			$this->options['theme-activated'] = true;
  			$this->options['theme-options-visited'] = false;
@@ -77,6 +78,24 @@ class UclaneOptions {
 		register_setting( 'uclane-options', 'uclane-options', array( &$this, 'validate_options' ) );
 	}
 
+
+	/*
+	 * Options Validation
+	 *
+	 * This function is used to validate the incoming options, mostly from
+	 * the Theme Options admin page. We make sure that the 'activated' array
+	 * is untouched and then verify the rest of the options.
+	 *
+	 */
+	function validate_options($options) {
+
+		// Mandatory.
+		$options['activated']              = true;
+		$options['uclane_homepage_layout'] =  trim( strip_tags( $options['uclane_homepage_layout']));;
+		$options['uclane_footer_note']     = trim( strip_tags( $options['uclane_footer_note']));
+
+		return $options;
+	}
 
 	/* 
 	 * Register admin options sections
@@ -117,18 +136,21 @@ class UclaneOptions {
 	 * General tab sectionss
 	 *
 	 * Registers sections for the general tab
+	 *
 	 */
 	function register_general_tab_sections(){
 
-		//define homepage section plus fields for it
-		add_settings_section( 'section_homepage', __( 'Homepage', 'uclane' ), create_function( '', 'echo "<hr/>";' ), 'uclane-panel' );
-		add_settings_field( 'uclane_home_layout', __( 'Homepage layout', 'uclane' ), array( &$this, 'setting_homepage_layout' ), 'uclane-panel', 'section_homepage', 'uclane_homepage_layout' );
+		// define homepage section plus fields for it
+		// remember to pass the field-id as an arg to the add_settings_fields
+		// callback for easy matching and outputing
+		add_settings_section( 'section_homepage', __( 'Homepage', 'uclane' ), create_function( '', 'echo null;' ), 'uclane-panel' );
+		add_settings_field( 'uclane_homepage_layout', __( 'Homepage layout', 'uclane' ), array( &$this, 'setting_homepage_layout' ), 'uclane-panel', 'section_homepage', 'uclane_homepage_layout' );
 
 
-		add_settings_section( 'section_footer', __( 'Footer', 'uclane' ), create_function( '', 'echo "<hr/>";' ), 'uclane-panel' );
-		add_settings_field( 'uclane_footer_note', __( 'Footer Note', 'uclane' ), array( &$this, 'setting_footer_note' ), 'uclane-panel', 'section_footer' );
+		add_settings_section( 'section_footer', __( 'Footer', 'uclane' ), create_function( '', 'echo null;' ), 'uclane-panel' );
+		add_settings_field( 'uclane_footer_note', __( 'Footer Note', 'uclane' ), array( &$this, 'setting_footer_note' ), 'uclane-panel', 'section_footer', 'uclane_footer_note' );
 
-
+		//show the save button once all is done
 	}	
 
 	/* 
@@ -159,22 +181,6 @@ class UclaneOptions {
 	}
 
 
-	/*
-	 * Options Validation
-	 *
-	 * This function is used to validate the incoming options, mostly from
-	 * the Theme Options admin page. We make sure that the 'activated' array
-	 * is untouched and then verify the rest of the options.
-	 *
-	 */
-	function validate_options($options) {
-		// Mandatory.
-		$options['activated'] = true;
-		
-		return $options;
-	}
-
-
 	/* Load Options
 	 *
 	 * Gets current options and returns them if found
@@ -183,40 +189,22 @@ class UclaneOptions {
 	 * activated and user hasn't arrived at options page
 	 */
 	function load_options() {
-		$this->options = (array) get_option('uclane_theme_options');
+		$this->options = (array) get_option('uclane-options');
 		$this->options =  array_merge( $this->default_options(), $this->options);
+
 	}
 
 	/* Default Options
 	 * 
 	 * creates an array of theme default options
-	 * and returns ithttp://localhost/wordpress/wp-admin/themes.php?page=uclane-panel&tab=general
+	 * and returns it
 	 */
 	function default_options(){
 
 		$this->defaults=array(
 			/* general tab */
 			'uclane_homepage_layout' => 'grid',
-			'home_posts_to_show'     => 4,
-			'footer_show_copyright'  => true,
-			'footer_show_credit'     => true,
-			
-			/* layout tab */
-			'homepage_layout'        => 'content-sidebar',
-			'blog_layout'            => 'content-sidebar',
-			
-			
-			/* design tab */
-			'color_scheme'           => '',
-			'custom_css'             => __( '/* Type your custom styles here */', 'uclane' ),			
-			
-			/* typography tab */
-			'default_font_fam'       => 'Open Sans',
-			'headings_font_fam'      => 'PT Sans',
-			'body_copy_font_fam'     => 'Open Sans',
-			'body_copy_font_size'    => '16px',
-			
-			'theme_version'          => '0.0.1'
+			'uclane_footer_note'     => ''
 		);
 
 		return $this->defaults;
@@ -275,25 +263,30 @@ class UclaneOptions {
 	 *
 	 */
 	function theme_options() {
-	
-		if ( ! isset( $this->options['options-visited'] ) || ! $this->options['options-visited'] ) {
-			$this->options['options-visited'] = true;
+		
+		// user has reached the theme options page
+		if ( ! isset( $this->options['theme-options-visited'] ) || ! $this->options['theme-options-visited'] ) {
+			$this->options['theme-options-visited'] = true;
 			$this->update_options();
 		}
+
+		//get the current tab, passed while submiting form to maintain context
+		$tab = isset($_GET['tab']) ? $_GET['tab'] : 'general';	
 	?>
 		<div class="wrap">
 			<div id="icon-themes" class="icon32"><br></div>
-			<h2><?php _e( 'San Fran Options', 'sanfran' ); ?></h2>
+			<h2><?php _e( 'Uclane Options', 'uclane' ); ?></h2>
 			<h2 class="nav-tab-wrapper">
 				<?php $this->options_page_tabs(); ?>
 			</h2>
-			<?php if( isset( $_GET['settings_updated']) ) ?>
-			<form method="post" act ion="options.php">
+
+			<form method="post" action="options.php">
 				<?php settings_fields( 'uclane-options' ); ?>
 				<?php do_settings_sections( 'uclane-panel' ); ?>
 				<p class="submit">
-					<input name="Submit" type="submit" class="button-primary" value="<?php esc_attr_e('Save Changes', 'sanfran'); ?>" />
-				</p >
+					<input name="reset-<?php echo $tab; ?>" type="submit" class="button-primary" value="<?php esc_attr_e('Save Changes', 'uclane'); ?>" />
+					<input name="reset-<?php echo $tab; ?>" type="submit" class="button-secondary" value="<?php esc_attr_e('Reset Defaults', 'uclane'); ?>" />
+				</p>
 			</form>
 		</div>
 	<?php
@@ -316,7 +309,7 @@ class UclaneOptions {
 
 		$links = array();
 		foreach($tabs as $tab) {
-			$current = ($tab['name'] == $current) ?  ' nav-tab-active' : '';
+			$current = ($tab['name'] == $current_tab) ?  ' nav-tab-active' : '';
 			$links[] = '<a class="nav-tab '.$current.'" href="?page=uclane-panel&tab='.$tab['name'].'">'.$tab['label'].'</a>';
 		}
 
@@ -336,10 +329,10 @@ class UclaneOptions {
 	 * footer note from the $options array.
 	 *
 	 */
-	function setting_footer_note() {
+	function setting_footer_note($field) {
 	?>
-		<textarea rows="5" class="large-text code" name="sanfran-options[footer-note]"><?php echo esc_textarea( $this->options['footer-note'] ); ?></textarea><br />
-		<span class="description"><?php _e( 'This is the text that appears at the bottom of every page, right next to the copyright notice.', 'sanfran' ); ?></span>
+		<textarea rows="5" class="large-text code" name="uclane-options[<?php echo $field; ?>]"><?php echo esc_textarea( $this->options[$field] ); ?></textarea><br />
+		<span class="description"><?php _e( 'This is the text that appears at the bottom of every page, right next to the copyright notice.', 'uclane' ); ?></span>
 	<?php
 	}
 
@@ -351,19 +344,34 @@ class UclaneOptions {
 	 * can be either blog / grid layout.
 	 *
 	 */
-	function setting_homepage_layout($fieldid) {  ?>
+	function setting_homepage_layout($field) {  ?>
 		<label class="description">
-			<input name="uclane-options[<?php echo $fieldid; ?>]" type="radio" <?php checked( 'grid', $this->options[$fieldid] ); ?> value="grid" />
+			<input name="uclane-options[<?php echo $field; ?>]" type="radio" <?php checked( 'grid', $this->options[$field] ); ?> value="grid" />
 			<span><?php _e( 'Grid Layout', 'uclane' ); ?></span>
 		</label><br />
 		<label class="description">
-			<input name="uclane-options[<?php echo $fieldid; ?>]" type="radio" <?php checked( 'blog', $this->options[$fieldid] ); ?> value="blog" />
+			<input name="uclane-options[<?php echo $field; ?>]" type="radio" <?php checked( 'blog', $this->options[$field] ); ?> value="blog" />
 			<span><?php _e( 'Blog Layout', 'uclane' ); ?></span>
-		</label>
+		</label> 	
 	<?php
 	}
 
 
+
+	/*
+	 * Theme Deaactivation
+	 *
+	 * Remove all the options after theme deactivation. 
+	 * let's be nice and keep the database clean, even 
+	 * if the users didn't like our theme.
+	 *
+	 */
+	function deactivate(){
+		delete_option( 'uclane-options' );
+	}
+
 }
 
-new UclaneOptions;
+// Initialize the above class after theme setup
+add_action( 'after_setup_theme', create_function( '', 'new UclaneOptions;' ) );
+

@@ -5,7 +5,7 @@
 * Theme features are defined here, plus theme options panel
 *
 * @package wordpress
-* @subpackage Uclane
+* @subpackage San Fran
 * @version 1.0.3
 *
 */
